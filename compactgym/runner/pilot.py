@@ -313,7 +313,7 @@ async def amain(args):
         if args.stage in ("score", "all"):
             await stage_score(cfg, llm, P, args.conc, args.limit, args.resume_only)
         if args.stage in ("resume", "all"):
-            await stage_resume(cfg, llm, P, args.conc, ALL_BASELINES + ["best8_infoloss"])
+            await stage_resume(cfg, llm, P, args.conc, args.arms or ALL_BASELINES + ["best8_infoloss"])
     finally:
         P["spend"].parent.mkdir(parents=True, exist_ok=True)
         P["spend"].write_text(json.dumps({"total_usd": llm.spend.total, "by_tag": llm.spend.by_tag, "n_calls": llm.spend.n_calls}, indent=1))
@@ -333,6 +333,7 @@ def main(argv=None):
     ap.add_argument("--http-conc", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--resume-only", action="store_true")
+    ap.add_argument("--arms", nargs="+", default=None, help="resume only these compactors (default: all baselines + best8_infoloss)")
     ap.add_argument("--max-spend", type=float, default=25.0)
     asyncio.run(amain(ap.parse_args(argv)))
 
