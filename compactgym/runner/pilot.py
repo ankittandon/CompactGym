@@ -9,6 +9,7 @@ Every stage is resumable (results are appended to JSONL and skipped on re-run).
 from __future__ import annotations
 
 import argparse
+import os
 import asyncio
 import json
 import random
@@ -32,7 +33,7 @@ from ..scoring.retention import probe, remove_fact
 from ..scoring.forgetting import forgetting_summary
 from .common import PrecomputedCompactor, jl_append, jl_read, pilot_spec, retention_for_context, score_row, state_from_snapshot
 
-BUDGET = 16_000
+BUDGET = int(os.environ.get("COMPACTGYM_BUDGET", 16_000))  # e.g. COMPACTGYM_BUDGET=8000 for the harder setup
 K_CONT = 3  # recorded next-k turns for InfoLoss
 CORE = ["small_prompted", "frontier", "threshold_pi", "cliff"]  # + best-of-8 (small samples, chosen by InfoLoss)
 ALL_BASELINES = ["never", "threshold_pi", "threshold_anthropic", "threshold_codex", "recent_k", "cliff", "constraint_extractor", "memory_offload", "frontier", "small_prompted"]
@@ -121,7 +122,7 @@ def log_len_at(res: EpisodeResult, step: int) -> int:
     return len(res.full_log)
 
 
-async def stage_select(cfg, n, P, n_bp, n_resume_bps):
+async def stage_select(cfg, n, P, n_bp, n_resume_bps, per_ep: int = 1):
     bps = {}
     for seed in range(n):
         ep_id = f"p{seed:03d}"
@@ -136,8 +137,9 @@ async def stage_select(cfg, n, P, n_bp, n_resume_bps):
     # resume subset: the first eligible branch point of the first episodes with >=2 bps
     resume = []
     for ep_id, b in bps.items():
-        if len(resume) < n_resume_bps:
-            resume.append([ep_id, b[0]])  # earliest eligible: leaves the longest horizon to observe forgetting
+        for step in b[:per_ep]:  # earliest eligible first: leaves the longest horizon to observe forgetting
+            if len(resume) < n_resume_bps:
+                resume.append([ep_id, step])
     P["bps"].write_text(json.dumps({"bps": bps, "resume": resume}, indent=1))
     print(f"[select] {sum(len(v) for v in bps.values())} branch points in {len(bps)} episodes; {len(resume)} for live resume")
     return bps, resume
@@ -309,7 +311,7 @@ async def amain(args):
         if args.stage in ("record", "all"):
             await stage_record(cfg, llm, args.n, P, args.conc, args.start)
         if args.stage in ("select", "record", "all"):
-            await stage_select(cfg, args.n, P, args.n_bp, args.n_resume)
+            await stage_select(cfg, args.n, P, args.n_bp, args.n_resume, args.resume_per_ep)
         if args.stage in ("score", "all"):
             await stage_score(cfg, llm, P, args.conc, args.limit, args.resume_only)
         if args.stage in ("resume", "all"):
@@ -329,6 +331,7 @@ def main(argv=None):
     ap.add_argument("--start", type=int, default=0)
     ap.add_argument("--n-bp", type=int, default=4)
     ap.add_argument("--n-resume", type=int, default=24)
+    ap.add_argument("--resume-per-ep", type=int, default=1)
     ap.add_argument("--conc", type=int, default=6)
     ap.add_argument("--http-conc", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None)
