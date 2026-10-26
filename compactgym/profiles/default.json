@@ -1,0 +1,20 @@
+{
+  "name": "default",
+  "description": "Balanced: success first, forgetting is costly, pauses and cost matter moderately.",
+  "w_p": 0.002,
+  "w_a": 0.15,
+  "w_c": 1.0,
+  "lambda": 0.5,
+  "never_lose": [
+    "Action",
+    "Information",
+    "Process",
+    "Preference",
+    "Output",
+    "Revision",
+    "Decision",
+    "Reference",
+    "Error"
+  ],
+  "keep_k": 2
+}

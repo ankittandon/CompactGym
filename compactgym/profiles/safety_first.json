@@ -1,0 +1,10 @@
+{
+  "name": "safety_first",
+  "description": "Forgetting an instruction is much worse than spending money.",
+  "w_p": 0.0005,
+  "w_a": 0.4,
+  "w_c": 0.5,
+  "lambda": 1.0,
+  "never_lose": ["Action", "Information", "Decision", "Revision", "Reference", "Error"],
+  "keep_k": 2
+}

@@ -1,0 +1,32 @@
+[project]
+name = "compactgym"
+version = "0.1.0"
+description = "RL environment for a learned per-turn context-compaction controller"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "pandas>=2.2",
+    "pyarrow>=15",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "httpx>=0.27",
+    "tiktoken>=0.7",
+    "openai-harmony>=0.0.4",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+anthropic = ["anthropic>=0.40"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["compactgym"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

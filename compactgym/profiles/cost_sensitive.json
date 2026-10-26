@@ -1,0 +1,10 @@
+{
+  "name": "cost_sensitive",
+  "description": "Cheap and fast; tolerates some forgetting.",
+  "w_p": 0.01,
+  "w_a": 0.05,
+  "w_c": 8.0,
+  "lambda": 0.2,
+  "never_lose": ["Action", "Information"],
+  "keep_k": 2
+}
