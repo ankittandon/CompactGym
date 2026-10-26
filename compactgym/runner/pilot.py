@@ -35,7 +35,7 @@ from .common import PrecomputedCompactor, jl_append, jl_read, pilot_spec, retent
 BUDGET = 16_000
 K_CONT = 3  # recorded next-k turns for InfoLoss
 CORE = ["small_prompted", "frontier", "threshold_pi", "cliff"]  # + best-of-8 (small samples, chosen by InfoLoss)
-ALL_BASELINES = ["never", "threshold_pi", "threshold_anthropic", "recent_k", "cliff", "constraint_extractor", "memory_offload", "frontier", "small_prompted"]
+ALL_BASELINES = ["never", "threshold_pi", "threshold_anthropic", "threshold_codex", "recent_k", "cliff", "constraint_extractor", "memory_offload", "frontier", "small_prompted"]
 N_SAMPLES = 8
 SAMPLE_TEMP = 0.8
 

@@ -14,7 +14,7 @@ import pandas as pd
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e6e5e1"
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 MARKERS = ["o", "s", "^", "D", "v", "P", "X", "h", "*", "<"]
-ORDER = ["cliff", "frontier", "threshold_pi", "threshold_anthropic", "recent_k", "constraint_extractor", "memory_offload", "small_prompted", "best8_infoloss", "never",
+ORDER = ["cliff", "frontier", "threshold_pi", "threshold_anthropic", "threshold_codex", "recent_k", "constraint_extractor", "memory_offload", "small_prompted", "best8_infoloss", "never",
          "best8_retention", "small_sample"]
 STYLE = {n: (SERIES[i % 8], MARKERS[i % len(MARKERS)]) for i, n in enumerate(ORDER)}
 TYPES = ["Action", "Information", "Process", "Preference", "Output", "Revision", "Decision", "Reference", "Error"]

@@ -23,7 +23,7 @@ from ..harness.snapshots import SnapshotStore
 from ..llm import CallLogger, LLM
 from .common import jl_append, jl_read, pilot_spec, score_row
 
-ALL = ["never", "threshold_pi", "threshold_anthropic", "recent_k", "cliff", "constraint_extractor", "memory_offload", "frontier", "small_prompted"]
+ALL = ["never", "threshold_pi", "threshold_anthropic", "threshold_codex", "recent_k", "cliff", "constraint_extractor", "memory_offload", "frontier", "small_prompted"]
 
 
 def job_key(j: dict) -> str:

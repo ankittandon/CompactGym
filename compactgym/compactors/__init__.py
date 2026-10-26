@@ -8,10 +8,11 @@ from .frontier import Frontier
 from .memory_offload import MemoryOffload
 from .recent_k import RecentK
 from .small_prompted import SmallPrompted
-from .threshold import Never, ThresholdAnthropic, ThresholdPi
+from .threshold import Never, ThresholdAnthropic, ThresholdCodex, ThresholdPi
 
 REGISTRY: dict[str, type[BaseCompactor]] = {
-    "never": Never, "threshold_pi": ThresholdPi, "threshold_anthropic": ThresholdAnthropic, "recent_k": RecentK,
+    "never": Never, "threshold_pi": ThresholdPi, "threshold_anthropic": ThresholdAnthropic,
+    "threshold_codex": ThresholdCodex, "recent_k": RecentK,
     "cliff": Cliff, "constraint_extractor": ConstraintExtractor, "memory_offload": MemoryOffload,
     "frontier": Frontier, "small_prompted": SmallPrompted,
 }
