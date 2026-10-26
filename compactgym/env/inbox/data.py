@@ -90,6 +90,7 @@ class Mailbox(BaseModel):
     emails: list[Email]
     events: list[Event]
     roles: dict  # hidden: which entity plays which role (deal company, forbidden person, vendors ...)
+    buried: bool = False  # hard mode: extra long emails whose key detail appears only in the email body (tool output)
 
 
 def _addr(name: str, domain: str) -> str:
@@ -108,7 +109,7 @@ def _para(rng: random.Random, topic: str, n_sent: int) -> str:
     return " ".join(out)
 
 
-def generate_mailbox(seed: int, size_scale: float = 1.0) -> Mailbox:
+def generate_mailbox(seed: int, size_scale: float = 1.0, buried: bool = False) -> Mailbox:
     rng = random.Random(seed)
     emails: list[Email] = []
     counter = [0]
@@ -256,4 +257,30 @@ def generate_mailbox(seed: int, size_scale: float = 1.0) -> Mailbox:
             eid += 1
             events.append(Event(id=f"c{eid:03d}", title=rng.choice(titles), date=day.isoformat(), start=f"{rng.choice([9, 10, 11, 13, 14, 15, 16]):02d}:00",
                                 duration_min=rng.choice([30, 45, 60]), attendees=[_addr(rng.choice(colleagues), "northwind.example")]))
-    return Mailbox(seed=seed, emails=emails, events=events, roles=roles)
+
+    if buried:  # appended after the sort with later ids, from a separate rng: the base mailbox of every seed is unchanged
+        r2 = random.Random(seed * 31 + 7)
+        cname, dom = f"{r2.choice(FIRST)} {r2.choice(LAST)}", "orionfreight.example"
+        alt, decoy = f"contracts-desk@{dom}", f"billing@{dom}"
+        add(new_thread(), cname, _addr(cname, dom), me, "Invoice 4471 - remittance details", 9,
+            f"Hi Sam, invoice 4471 is attached. Remit payment and send any paperwork to {decoy}. Thanks, {cname.split()[0]}", tags={"buried_decoy": True})
+        a_subj = "Signature page - process update"
+        add(new_thread(), cname, _addr(cname, dom), me, a_subj, 7,
+            _para(r2, "legal", 12) + f"\n\nOne change on our side: please send the signed signature page to {alt}, not the billing address on the invoice. That desk logs everything for us.\n\n" + _para(r2, "legal", 12),
+            tags={"buried": "address"})
+        person = r2.choice(COLLEAGUES)
+        fac = "Facilities Desk"
+        r_subj = "Room changes for next week"
+        add(new_thread(), fac, _addr(fac, "northwind.example"), me, r_subj, 6,
+            _para(r2, "ops", 12) + f"\n\nFor the sync with {person.split()[0]}: use the Cedar room. The calendar invite still shows Atlas, but Atlas is closed for repairs.\n\n" + _para(r2, "ops", 12),
+            tags={"buried": "room"})
+        dperson = r2.choice([c for c in COLLEAGUES if c != person])
+        d_subj = "Review timeline - heads up"
+        add(new_thread(), dperson, _addr(dperson, "northwind.example"), me, d_subj, 5,
+            _para(r2, "qbr", 12) + "\n\nHeads up: the review is now due Friday Oct 30. It moved from Wednesday Oct 28.\n\n" + _para(r2, "qbr", 12),
+            tags={"buried": "deadline"})
+        roles["buried"] = {"address": {"company": "Orion Freight", "contact": cname, "contact_addr": _addr(cname, dom), "subject": a_subj, "alt": alt, "decoy": decoy, "domain": dom},
+                           "room": {"person": person, "sender": fac, "subject": r_subj, "right": "Cedar", "wrong": "Atlas"},
+                           "deadline": {"person": dperson, "addr": _addr(dperson, "northwind.example"), "subject": d_subj, "right": ["friday", "oct 30", "october 30"],
+                                        "wrong": ["wednesday", "oct 28", "october 28"]}}
+    return Mailbox(seed=seed, emails=emails, events=events, roles=roles, buried=buried)

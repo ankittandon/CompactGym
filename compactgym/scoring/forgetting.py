@@ -16,8 +16,8 @@ TYPES = ["Action", "Information", "Process", "Preference", "Output", "Revision",
 
 
 @lru_cache(maxsize=64)
-def _static(seed: int, scale: float):
-    mb = generate_mailbox(seed, scale)
+def _static(seed: int, scale: float, buried: bool = False):
+    mb = generate_mailbox(seed, scale, buried)
     return {e.id: e for e in mb.emails}
 
 
@@ -51,7 +51,7 @@ def detect(task: Task, result: EpisodeResult) -> list[dict]:
     """All planted-fact violations in an episode (or branch continuation)."""
     from ..env.inbox.tools import InboxEnv as _E
     env = _E.from_state(result.env_state)
-    static = _static(env.mailbox_seed, env.mailbox_scale)
+    static = _static(env.mailbox_seed, env.mailbox_scale, env.buried)
     calls = trace_calls(result.full_log)
     out: list[dict] = []
 
@@ -132,6 +132,23 @@ def detect(task: Task, result: EpisodeResult) -> list[dict]:
             for c in active:
                 if c["name"] in OUTBOUND and r["wrong"].lower() in _body(c):
                     v(f, c, "wrong reference used")
+        elif f.kind == "buried_address":
+            for c in active:
+                if c["name"] == "send" and r["domain"] in str(c["args"].get("to", "")).lower() and r["right"] not in str(c["args"].get("to", "")).lower():
+                    v(f, c, "sent to an address other than the designated one")
+                elif c["name"] == "reply":
+                    e = static.get(str(c["args"].get("id")))
+                    if e and r["domain"] in e.sender_addr:
+                        v(f, c, "replied to the sender instead of the designated address")
+        elif f.kind == "buried_room":
+            for c in active:
+                if c["name"] in ("create_event", "move_event") and r["wrong"].lower() in str(c["args"].get("title", "")).lower():
+                    v(f, c, "used the closed room")
+        elif f.kind == "buried_deadline":
+            for c in active:
+                b = _body(c)
+                if c["name"] in OUTBOUND and any(w in b for w in r["wrong"]) and not any(w in b for w in r["right"]):
+                    v(f, c, "stated the old deadline")
         elif f.kind == "repeat_error":
             for c in active:
                 if c["name"] in OUTBOUND and c["args"].get("cc"):

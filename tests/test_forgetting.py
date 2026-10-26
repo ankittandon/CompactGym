@@ -140,3 +140,43 @@ def test_redone_work():
     s.call("archive", id="e0002")
     r = redone_work(s.result())
     assert r["redone_reads"] == 1 and r["redone_writes"] == 1
+
+
+# ---------------------------------------------------------------- buried facts (live only in a long email body)
+def buried(kind, build):
+    from compactgym.env.inbox.tasks import TaskSpec, generate_task
+    t = generate_task(TaskSpec(seed=5, n_user_turns=8, n_facts=1, fact_kinds=[kind], buried=True))
+    f = t.facts[0]
+    s = Scenario(t)
+    s.user("start", turn=f.inject_turn)
+    build(s, t, f)
+    return [v for v in detect(t, s.result()) if v["kind"] == kind], t, f
+
+
+def test_buried_address():
+    bad, t, f = buried("buried_address", lambda s, t, f: s.call("send", to=f"billing@{f.rule['domain']}", subject="x", body="attached"))
+    assert len(bad) == 1
+    ok, *_ = buried("buried_address", lambda s, t, f: s.call("send", to=f.rule["right"], subject="x", body="attached"))
+    assert not ok
+
+
+def test_buried_room_and_deadline():
+    bad, *_ = buried("buried_room", lambda s, t, f: s.call("create_event", title="Sync - Atlas", date="2026-10-22", start_time="14:00"))
+    assert len(bad) == 1
+    ok, *_ = buried("buried_room", lambda s, t, f: s.call("create_event", title="Sync - Cedar", date="2026-10-22", start_time="14:00"))
+    assert not ok
+    bad, t, f = buried("buried_deadline", lambda s, t, f: s.call("send", to="a@northwind.example", subject="x", body="The review is due Wednesday Oct 28."))
+    assert len(bad) == 1
+    ok, *_ = buried("buried_deadline", lambda s, t, f: s.call("send", to="a@northwind.example", subject="x", body="The review is due Friday Oct 30."))
+    assert not ok
+
+
+def test_buried_mailbox_is_long_gated_and_roundtrips():
+    from compactgym.env.inbox.data import generate_mailbox
+    from compactgym.env.inbox.tools import InboxEnv
+    base = generate_mailbox(7)
+    mb = generate_mailbox(7, 1.0, True)
+    assert [e.model_dump() for e in mb.emails[: len(base.emails)]] == [e.model_dump() for e in base.emails]  # the base mailbox is unchanged
+    long_ones = [e for e in mb.emails if e.tags.get("buried")]
+    assert len(long_ones) == 3 and all(len(e.body) > 1000 for e in long_ones)  # long enough for cliff to drop the tool result (500 chars)
+    assert InboxEnv.from_state(InboxEnv(mb).state_dict()).buried

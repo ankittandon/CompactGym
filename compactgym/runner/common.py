@@ -29,16 +29,18 @@ from ..scoring.success import success_summary
 INJECTIONS = ["top", "middle", "repeated", "top", "bottom", "middle"]
 
 
-def hard_spec(seed: int, n_turns: int = 28, n_facts: int = 4, volume: float = 4.0) -> TaskSpec:
+def hard_spec(seed: int, n_turns: int = 28, n_facts: int = 4, volume: float = 4.0, buried: bool = False) -> TaskSpec:
     """Hard mode: facts planted early, exercised only in the last 40% of the session, unrecoverable once forgotten, and gating success."""
     rng = random.Random(10_000 + seed)
     types = FACT_TYPES[:]
     rng.shuffle(types)
     return TaskSpec(seed=seed, n_user_turns=n_turns, n_facts=n_facts, fact_types=types[: max(n_facts, 5)], injection="early", exercise_after=0.6,
-                    restate_on_reask=False, gate_success=True, strict=bool(seed % 2), direct=bool((seed // 2) % 3 != 0), distractor_volume=volume)
+                    restate_on_reask=False, gate_success=True, buried=buried, strict=bool(seed % 2), direct=bool((seed // 2) % 3 != 0), distractor_volume=volume)
 
 
 def pilot_spec(seed: int, n_turns: int = 28, n_facts: int = 4, volume: float = 4.0) -> TaskSpec:
+    if os.environ.get("COMPACTGYM_SPEC") == "hard_buried":  # hard mode + 2 facts that live only in long email bodies
+        return hard_spec(seed, n_turns, n_facts, volume, buried=True)
     if os.environ.get("COMPACTGYM_SPEC") == "hard":  # COMPACTGYM_SPEC=hard switches every pilot stage to hard mode
         return hard_spec(seed, n_turns, n_facts, volume)
     rng = random.Random(10_000 + seed)

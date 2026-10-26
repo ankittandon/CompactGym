@@ -66,7 +66,7 @@ class Episode:
         self.profile = load_profile(cfg.profile)
         self.include_recall = bool(getattr(compactor, "uses_memory", False))
         self.tools = openai_tools(self.include_recall)
-        self.env = InboxEnv(generate_mailbox(task.spec.seed, task.spec.mailbox_scale), task.spec.distractor_volume, task.spec.mailbox_scale)
+        self.env = InboxEnv(generate_mailbox(task.spec.seed, task.spec.mailbox_scale, task.spec.buried), task.spec.distractor_volume, task.spec.mailbox_scale)
         self.user = SimUser(task, cfg, llm, mode=user_mode, judge_reasks=judge_reasks, seed=seed)
         self.full_log: list[Message] = []
         self.state = EpisodeState(episode_id=episode_id, profile=self.profile, keep_k=cfg.keep_k, memory=MemoryStore(),

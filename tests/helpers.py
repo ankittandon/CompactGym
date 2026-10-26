@@ -48,7 +48,7 @@ class Scenario:
     def __init__(self, task):
         self.task = task
         s = task.spec
-        self.env = InboxEnv(generate_mailbox(s.seed, s.mailbox_scale), s.distractor_volume, s.mailbox_scale)
+        self.env = InboxEnv(generate_mailbox(s.seed, s.mailbox_scale, s.buried), s.distractor_volume, s.mailbox_scale)
         self.log: list[Message] = [Message(role="system", content="sys")]
         self.step = 0
         self.turn = 0

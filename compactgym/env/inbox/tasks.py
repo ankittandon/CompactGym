@@ -71,6 +71,7 @@ class TaskSpec(BaseModel):
     # hard mode (all off by default, so existing seeds generate exactly the same tasks)
     exercise_after: float | None = None  # fraction of the session before which no fact-dependent goal is asked: facts must survive many compactions
     restate_on_reask: bool = True  # False: the simulated user never repeats a fact when asked again, so a forgotten fact is unrecoverable
+    buried: bool = False  # hard mode: 2 of the facts live only in a long tool output (an email body), not in anything the user says
     gate_success: bool = False  # True: a goal scores 0 if the fact it exercises was violated in that goal's turn
 
 
@@ -177,8 +178,8 @@ def _frame(text: str, strict: bool, direct: bool) -> str:
     return text
 
 
-def _mk(c: _Ctx, fid: str, type_: str, kind: str, text: str, *, framed=True, **kw) -> Fact:
-    utter = _frame(text, c.spec.strict, c.spec.direct) if framed and type_ in CONPACT_TYPES else text
+def _mk(c: _Ctx, fid: str, type_: str, kind: str, text: str, *, framed=True, utter: str | None = None, **kw) -> Fact:
+    utter = utter or (_frame(text, c.spec.strict, c.spec.direct) if framed and type_ in CONPACT_TYPES else text)
     return Fact(id=fid, type=type_, kind=kind, text=text, utter=utter, **kw)
 
 
@@ -294,6 +295,32 @@ def build_fact(kind: str, c: _Ctx, fid: str) -> tuple[Fact, list[Goal]]:
         g = Goal(id=c.gid("g"), kind="loop_finance", fact_id=fid, text="Reply to Priya's most recent email and loop in finance (finance@northwind.example) on it.",
                  checks=[{"type": "sent_to", "addr": "finance@northwind.example"}])
         return f, [g]
+    if kind in BURIED_KINDS:
+        b = r["buried"][kind.removeprefix("buried_")]
+        if kind == "buried_address":
+            f = _mk(c, fid, "Reference", kind, f"{b['company']} asked for the signed signature page to go to {b['alt']}, not the billing address on their invoice ({b['decoy']}).", framed=False,
+                    utter=f'Can you open the email "{b["subject"]}" from {b["contact"]} and give me the short version? Don\'t act on it yet.',
+                    probe={"probe": f"Send {b['contact']} the signed signature page.", "correct": f"Send it to {b['alt']}.", "incorrect": f"Send it to the billing address {b['decoy']}."},
+                    rule={"domain": b["domain"], "right": b["alt"]}, leak_keywords=[b["alt"].lower()], reask_keywords=["which address", "what address", "where should i send"])
+            g = Goal(id=c.gid("g"), kind="send_signature", fact_id=fid, text=f"Send {b['contact']} the signed signature page -- just a short note saying it's attached.",
+                     checks=[{"type": "sent_to", "addr": b["alt"]}])
+            return f, [g]
+        if kind == "buried_room":
+            day = TODAY + timedelta(days=c.rng.choice([3, 4, 8, 9]))
+            f = _mk(c, fid, "Information", kind, f"The sync with {b['person'].split()[0]} is in the {b['right']} room, not {b['wrong']} (closed for repairs).", framed=False,
+                    utter=f'Please open the email "{b["subject"]}" from {b["sender"]} and tell me what it says -- no action yet.',
+                    probe={"probe": f"Book the sync with {b['person']} and put the room in the title.", "correct": f"Title it with the {b['right']} room.", "incorrect": f"Title it with the {b['wrong']} room."},
+                    rule={"wrong": b["wrong"]}, leak_keywords=[b["right"].lower()], reask_keywords=["which room", "what room"])
+            g = Goal(id=c.gid("g"), kind="book_room", fact_id=fid, text=f"Set up a 30 minute sync with {b['person']} on {_long(day)} at 14:00 and put the room in the event title.",
+                     checks=[{"type": "event_exists", "title_any": [b["right"].lower()], "date": _d(day)}, {"type": "no_event", "title_any": [b["wrong"].lower()], "date": _d(day)}])
+            return f, [g]
+        f = _mk(c, fid, "Revision", kind, f"The review is due Friday Oct 30, not Wednesday Oct 28.", framed=False,
+                utter=f'Open the email "{b["subject"]}" from {b["person"]} and give me the gist. Nothing to do yet.',
+                probe={"probe": f"Tell {b['person']} when the review is due.", "correct": "Say it is due Friday Oct 30.", "incorrect": "Say it is due Wednesday Oct 28."},
+                rule={"right": b["right"], "wrong": b["wrong"]}, leak_keywords=["oct 30"], reask_keywords=["what deadline", "which day", "when is it due"])
+        g = Goal(id=c.gid("g"), kind="confirm_deadline", fact_id=fid, text=f"Send {b['person']} a quick note confirming when the review is due.",
+                 checks=[{"type": "sent_to", "addr": b["addr"], "body_any": b["right"]}, {"type": "body_absent", "addr": b["addr"], "none": b["wrong"]}])
+        return f, [g]
     raise ValueError(kind)
 
 
@@ -309,23 +336,27 @@ KINDS_BY_TYPE = {
     "Error": ["repeat_error"],
 }
 PREREQ_KINDS = {"stale_date"}
+BURIED_KINDS = ["buried_address", "buried_room", "buried_deadline"]
 
 
 def generate_task(spec: TaskSpec) -> Task:
     rng = random.Random(spec.seed * 7919 + 13)
-    mb = generate_mailbox(spec.seed, spec.mailbox_scale)
+    mb = generate_mailbox(spec.seed, spec.mailbox_scale, spec.buried)
     c = _Ctx(mb, rng, spec)
     types = spec.fact_types or FACT_TYPES
     # one kind per type, round-robin over the (shuffled) allowed types
     tl = list(types)
     rng.shuffle(tl)
     kinds: list[str] = list(spec.fact_kinds or [])
+    n_std = spec.n_facts - (2 if spec.buried and not spec.fact_kinds else 0)
     for i in range(spec.n_facts * 4 if not kinds else 0):
-        if len(kinds) >= spec.n_facts:
+        if len(kinds) >= n_std:
             break
         opts = [k for k in KINDS_BY_TYPE[tl[i % len(tl)]] if k not in kinds]
         if opts:
             kinds.append(rng.choice(opts))
+    if spec.buried and not spec.fact_kinds:
+        kinds += rng.sample(BURIED_KINDS, 2)  # after the standard draw, so the rng stream of non-buried tasks is untouched
     T = max(spec.n_user_turns, 6)
     facts: list[Fact] = []
     goals: list[Goal] = []

@@ -61,6 +61,7 @@ class InboxEnv:
     def __init__(self, mailbox: Mailbox, output_scale: float = 1.0, mailbox_scale: float = 1.0):
         self.mailbox_seed = mailbox.seed
         self.mailbox_scale = mailbox_scale
+        self.buried = mailbox.buried
         self._base = {e.id: (e.folder, list(e.labels), e.read) for e in mailbox.emails}
         self.emails: dict[str, Email] = {e.id: e.model_copy(deep=True) for e in mailbox.emails}
         self.events: dict[str, Event] = {e.id: e.model_copy(deep=True) for e in mailbox.events}
@@ -77,13 +78,13 @@ class InboxEnv:
     def state_dict(self) -> dict:
         """Compact: only the dynamic parts; static email bodies are regenerated from (seed, scale)."""
         dyn = {k: [v.folder, v.labels, v.read] for k, v in self.emails.items() if (v.folder, v.labels, v.read) != self._base[k]}
-        return {"mailbox_seed": self.mailbox_seed, "mailbox_scale": self.mailbox_scale, "email_dyn": dyn,
+        return {"mailbox_seed": self.mailbox_seed, "mailbox_scale": self.mailbox_scale, "buried": self.buried, "email_dyn": dyn,
                 "events": {k: v.model_dump() for k, v in self.events.items()}, "sent": self.sent, "calls": self.calls,
                 "output_scale": self.output_scale, "_next_event": self._next_event, "_next_sent": self._next_sent, "step": self.step}
 
     @classmethod
     def from_state(cls, d: dict) -> "InboxEnv":
-        env = cls(generate_mailbox(d["mailbox_seed"], d["mailbox_scale"]), d["output_scale"], d["mailbox_scale"])
+        env = cls(generate_mailbox(d["mailbox_seed"], d["mailbox_scale"], d.get("buried", False)), d["output_scale"], d["mailbox_scale"])
         for k, (folder, labels, read) in d["email_dyn"].items():
             e = env.emails[k]
             e.folder, e.labels, e.read = folder, list(labels), read
