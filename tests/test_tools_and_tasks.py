@@ -128,3 +128,8 @@ def test_hard_mode_flags():
     u.cur = max(x.inject_turn for x in t.facts) + 1
     replies = [asyncio.run(u.respond(f"Sorry, {f.reask_keywords[0]}?"))[0] for _ in range(3)]
     assert all("already told you" in r and f.text not in r for r in replies)
+
+
+def test_dates_are_strict():
+    env = InboxEnv(generate_mailbox(1))
+    assert env.execute("create_event", {"title": "x", "date": "2022022022", "start_time": "10:00"}).startswith("ERROR")

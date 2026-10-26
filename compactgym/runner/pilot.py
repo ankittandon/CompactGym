@@ -231,7 +231,7 @@ async def score_bp(cfg: Config, llm: LLM, ep_id: str, step: int, P: dict[str, Pa
               + f" spend=${llm.spend.total:.2f}", flush=True)
 
 
-async def stage_score(cfg, llm, P, conc, limit=None, resume_only=False):
+async def stage_score(cfg, llm, P, conc, limit=None, resume_only=False, core_only=False):
     meta = json.loads(P["bps"].read_text())
     done = {(r["episode_id"], r["step"]) for r in jl_read(P["cands"])}
     resume_set = {(e, s) for e, s in meta["resume"]}
@@ -243,7 +243,7 @@ async def stage_score(cfg, llm, P, conc, limit=None, resume_only=False):
     sem = asyncio.Semaphore(conc)
     async def safe(e, s):
         try:
-            await score_bp(cfg, llm, e, s, P, ALL_BASELINES_NO_DUP if (e, s) in resume_set else CORE, sem)
+            await score_bp(cfg, llm, e, s, P, ALL_BASELINES_NO_DUP if (e, s) in resume_set and not core_only else CORE, sem)
         except SpendLimitExceeded:
             raise
         except Exception as ex:  # one failed branch point must not kill the stage; a re-run picks it up
@@ -313,7 +313,7 @@ async def amain(args):
         if args.stage in ("select", "record", "all"):
             await stage_select(cfg, args.n, P, args.n_bp, args.n_resume, args.resume_per_ep)
         if args.stage in ("score", "all"):
-            await stage_score(cfg, llm, P, args.conc, args.limit, args.resume_only)
+            await stage_score(cfg, llm, P, args.conc, args.limit, args.resume_only, args.core_only)
         if args.stage in ("resume", "all"):
             await stage_resume(cfg, llm, P, args.conc, args.arms or ALL_BASELINES + ["best8_infoloss"])
     finally:
@@ -335,6 +335,7 @@ def main(argv=None):
     ap.add_argument("--conc", type=int, default=6)
     ap.add_argument("--http-conc", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--core-only", action="store_true", help="score only the core candidates (+best-of-8) even at resume branch points")
     ap.add_argument("--resume-only", action="store_true")
     ap.add_argument("--arms", nargs="+", default=None, help="resume only these compactors (default: all baselines + best8_infoloss)")
     ap.add_argument("--max-spend", type=float, default=25.0)

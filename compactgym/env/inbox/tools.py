@@ -220,7 +220,7 @@ class InboxEnv:
 
     def _valid(self, d: str, t: str | None) -> str | None:
         try:
-            date.fromisoformat(d)
+            datetime.strptime(d, "%Y-%m-%d")  # strict: date.fromisoformat also accepts forms (e.g. '2022022022') that later rows cannot render
             if t is not None:
                 datetime.strptime(t, "%H:%M")
         except ValueError:

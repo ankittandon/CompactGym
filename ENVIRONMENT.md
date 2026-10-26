@@ -90,6 +90,16 @@ Weights come from a profile (`default`, `cost_sensitive`, `safety_first`) so the
 - **Repeated compaction.** The environment measures how error compounds across compactions (40 events deep).
 - **Cheap to run.** About $0.07 to record a full episode, and about $0.24 per seed for a full best-of-8 scoring pass, at the placeholder prices in the code.
 
+## Hard mode
+
+`COMPACTGYM_SPEC=hard COMPACTGYM_BUDGET=8000` switches every runner stage to a harder task, because at 16K almost nothing was forgotten:
+
+- facts are planted in turns 1-3 and only exercised in the last 40% of the session, so they have to survive many compactions (about 17 per branch at 8K);
+- a forgotten fact is unrecoverable: the simulated user never restates it when asked again;
+- a goal scores 0 if the fact it exercises was violated in that turn, so forgetting changes success.
+
+On 60 live branches this raised newly forgotten facts from 0.2 to 0.43 per branch (33% of branches forget at least one).
+
 ## Baselines (the leaderboard to beat)
 
 | Arm | Idea |
@@ -109,6 +119,7 @@ Weights come from a profile (`default`, `cost_sensitive`, `safety_first`) so the
 - Task success barely differs between arms (0.79-0.87, not significant).
 - `cliff` has the lowest information loss, the highest retention, zero pause and the lowest cost.
 - InfoLoss correlates weakly with live forgetting and failure (Spearman 0.18 across branch points, 0.03 within), so it is not yet a trustworthy reward on its own.
+- In hard mode (60 live branches) a single compaction's InfoLoss correlated *negatively* with the facts the whole branch later forgot (rho -0.33, 95% CI -0.54 to -0.08), and its retention not at all (+0.01). One compaction's score does not predict a 17-compaction trajectory, so the default profile now sets `lambda` to 0 and relies on the measured outcome (success, newly violated facts) instead.
 
 **Verdict:** train a router with SFT first, and validate the reward before running RL.
 
