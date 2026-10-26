@@ -62,12 +62,16 @@ class TaskSpec(BaseModel):
     n_facts: int = 3
     fact_types: list[str] | None = None
     fact_kinds: list[str] | None = None  # force specific detector kinds (tests, ablations)
-    injection: Literal["top", "middle", "bottom", "repeated"] = "top"
+    injection: Literal["top", "middle", "bottom", "repeated", "early"] = "top"  # early: turns 1-3, so the first compaction hits them soon
     strict: bool = False
     direct: bool = True
     distractor_volume: float = 1.0  # scales tool-output size
     latent: bool = True  # latent association wording where available
     mailbox_scale: float = 1.0
+    # hard mode (all off by default, so existing seeds generate exactly the same tasks)
+    exercise_after: float | None = None  # fraction of the session before which no fact-dependent goal is asked: facts must survive many compactions
+    restate_on_reask: bool = True  # False: the simulated user never repeats a fact when asked again, so a forgotten fact is unrecoverable
+    gate_success: bool = False  # True: a goal scores 0 if the fact it exercises was violated in that goal's turn
 
 
 class Task(BaseModel):
@@ -334,6 +338,8 @@ def generate_task(spec: TaskSpec) -> Task:
             inj = max(1, T // 2 - 1)
         elif spec.injection == "bottom":
             inj = max(1, T - 1 - len(gs) - 1)
+        elif spec.injection == "early":
+            inj = 1 + i % 3
         else:  # repeated: first at top, restated later
             inj = 0
             f.restate_turns = [max(1, T // 3), max(2, (2 * T) // 3)]
@@ -344,8 +350,9 @@ def generate_task(spec: TaskSpec) -> Task:
             goals.append(pre)
             gs = [g for g in gs if g.id != pre.id]
         f.inject_turn = inj
+        mt = inj + 1 if spec.exercise_after is None else max(inj + 1, int(T * spec.exercise_after))
         for g in gs:
-            exercise.append((inj + 1, g))
+            exercise.append((mt, g))
         facts.append(f)
     # assign turns: exercise goals greedily into free turns >= min_turn, rest filler
     occupied: dict[int, list[Goal]] = {g.turn: [g] for g in goals}

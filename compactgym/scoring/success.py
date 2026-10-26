@@ -60,12 +60,18 @@ def success_summary(task: Task, result: EpisodeResult, reached_turn: int | None 
     env = InboxEnv.from_state(result.env_state)
     last_turn = max([m.meta.get("user_turn", 0) for m in result.full_log if m.role == "user" and not m.meta.get("origin")] or [0])
     per_goal = {}
+    gated: set[tuple[str, int | None]] = set()
+    if task.spec.gate_success:  # hard mode: forgetting a fact kills the goal that exercises it
+        from .forgetting import detect
+        gated = {(v["fact"], v["user_turn"]) for v in detect(task, result)}
     for g in task.goals:
         if g.turn > last_turn:
             per_goal[g.id] = 0.0  # never reached
             continue
         s = [check_score(c, env, result, g) for c in g.checks]
         per_goal[g.id] = sum(s) / len(s) if s else 1.0
+        if g.fact_id and (g.fact_id, g.turn) in gated:
+            per_goal[g.id] = 0.0
     n = len(task.goals)
     return {"success": sum(per_goal.values()) / n if n else 0.0, "per_goal": per_goal, "goals_complete": sum(v >= 0.999 for v in per_goal.values()),
             "n_goals": n, "reached_turn": last_turn}

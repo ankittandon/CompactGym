@@ -108,3 +108,23 @@ def test_latent_association():
     assert all("H&Co" not in f.utter for _ in [0])
     deal_ids = {e.id for e in mb.emails if e.tags.get("deal")}
     assert set(f.rule["email_ids"]) == deal_ids
+
+
+def test_hard_mode_flags():
+    from compactgym.runner.common import hard_spec
+    from compactgym.env.inbox.user import SimUser
+    from compactgym.config import Config
+    import asyncio
+    t = generate_task(hard_spec(2000))
+    assert all(1 <= f.inject_turn <= 3 for f in t.facts)  # early
+    T = len(t.user_turns)
+    assert all(g.turn >= int(T * 0.6) for g in t.goals if g.fact_id and g.kind != "offsite_create")  # exercised late
+    # defaults are unchanged: the hard flags are off
+    d = TaskSpec(seed=1)
+    assert d.exercise_after is None and d.restate_on_reask and not d.gate_success
+    # unrecoverable: asking again never restates a fact
+    f = next(x for x in t.facts if x.reask_keywords)
+    u = SimUser(t, Config(), None)
+    u.cur = max(x.inject_turn for x in t.facts) + 1
+    replies = [asyncio.run(u.respond(f"Sorry, {f.reask_keywords[0]}?"))[0] for _ in range(3)]
+    assert all("already told you" in r and f.text not in r for r in replies)

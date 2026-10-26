@@ -169,3 +169,18 @@ def test_reward_and_calibration_and_spend_limit():
     st = SpendTracker(0.001)
     with pytest.raises(SpendLimitExceeded):
         st.add(Config().main, Usage(prompt=10_000_000, cached=0, completion=0), "x")
+
+
+def test_gate_success_zeroes_goal_of_violated_fact(monkeypatch):
+    from compactgym.scoring import forgetting, success
+    from compactgym.env.inbox.tasks import TaskSpec, generate_task
+    from compactgym.harness.agent import EpisodeResult
+    task = generate_task(TaskSpec(seed=3, n_user_turns=10, n_facts=2, gate_success=True))
+    g = next(x for x in task.goals if x.fact_id)
+    monkeypatch.setattr(forgetting, "detect", lambda t, r: [{"fact": g.fact_id, "user_turn": g.turn}])
+    called = {}
+    monkeypatch.setattr(success, "check_score", lambda c, e, r, gg: called.setdefault("n", 0) or 1.0)
+    monkeypatch.setattr(success.InboxEnv, "from_state", staticmethod(lambda s: None))
+    res = EpisodeResult(episode_id="e", task_id="t", compactor="x", cfg={}, steps=[], full_log=[])
+    out = success.success_summary(task, res)
+    assert out["per_goal"][g.id] == 0.0

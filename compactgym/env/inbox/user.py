@@ -93,7 +93,7 @@ class SimUser:
                     n = self.reask_counts.get(f.id, 0)
                     self.reask_counts[f.id] = n + 1
                     self.reasks.append({"fact": f.id, "step": step, "turn": self.cur, "via": "keyword"})
-                    if n == 0:
+                    if n == 0 or not self.task.spec.restate_on_reask:
                         return "I already told you that earlier -- please check back and carry on.", {"user_turn": self.cur, "reask_reaction": f.id}
                     return f"Again: {f.text}", {"user_turn": self.cur, "reask_reaction": f.id, "restated": f.id}
             g = self.task.goal(self.task.user_turns[self.cur].goal_ids[0]) if self.task.user_turns[self.cur].goal_ids else None
