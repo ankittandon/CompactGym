@@ -217,7 +217,10 @@ async def score_bp(cfg: Config, llm: LLM, ep_id: str, step: int, P: dict[str, Pa
             for row, r, il in out:
                 if row["candidate"] in pres:
                     row["probes"] = pres[row["candidate"]]
+        (P["picks"] / "all").mkdir(parents=True, exist_ok=True)  # every candidate's output, for SFT target selection (scripts/build_sft.py)
         for row, r, il in out:
+            if row["candidate"] not in ("best8_infoloss", "best8_retention"):
+                (P["picks"] / "all" / f"{ep_id}_{step}_{row['candidate']}_{row['sample'] if row['sample'] is not None else 'x'}.json").write_text(r.model_dump_json())
             jl_append(P["cands"], row)
             if row["candidate"] in CORE + ["best8_infoloss"]:
                 top = sorted(il.per_token, key=lambda p: -p["delta"] * p["w"])[:25]
