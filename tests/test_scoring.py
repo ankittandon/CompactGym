@@ -151,6 +151,15 @@ def test_non_blocking_compaction_has_no_pause():
     assert episode_cost(EpisodeResult(episode_id="e", task_id="t", compactor="x", cfg={}, steps=steps), cfg)["pause_s"] == 0.0
 
 
+def test_reward_retention_and_signed_infoloss():
+    prof = {"w_p": 0.0, "w_a": 0.0, "w_c": 0.0, "lambda": 1.0, "w_r": 0.5}
+    base = reward(success=0.5, pause_s=0, forgetting=0, cost=0, infoloss=0.0, profile=prof, retention=0.8)
+    assert base["reward"] == pytest.approx(0.5 + 0.5 * 0.8)
+    assert reward(0.5, 0, 0, 0, -0.1, prof, retention=0.8)["reward"] == pytest.approx(base["reward"] + 0.1)  # signed InfoLoss is a bonus, not clipped
+    assert reward(0.5, 0, 0, 0, 0.0, prof)["r_retention"] == 0.0  # no retention given -> no term
+    assert reward(0.5, 0, 0, 0, 0.0, {"w_p": 0, "w_a": 0, "w_c": 0, "lambda": 1.0}, retention=1.0)["r_retention"] == 0.0  # profiles without w_r are unchanged
+
+
 def test_reward_and_calibration_and_spend_limit():
     r = reward(success=0.8, pause_s=10, forgetting=2, cost=0.1, infoloss=0.2, profile={"w_p": 0.01, "w_a": 0.1, "w_c": 1.0, "lambda": 0.5}, lam=1.0)
     assert r["reward"] == pytest.approx(0.8 - 0.1 - 0.2 - 0.1 - 0.2)

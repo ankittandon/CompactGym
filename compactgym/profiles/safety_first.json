@@ -5,6 +5,14 @@
   "w_a": 0.4,
   "w_c": 0.5,
   "lambda": 1.0,
-  "never_lose": ["Action", "Information", "Decision", "Revision", "Reference", "Error"],
-  "keep_k": 2
+  "never_lose": [
+    "Action",
+    "Information",
+    "Decision",
+    "Revision",
+    "Reference",
+    "Error"
+  ],
+  "keep_k": 2,
+  "w_r": 0.5
 }

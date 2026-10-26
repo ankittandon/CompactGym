@@ -68,7 +68,7 @@ The controller replies with one JSON object:
 ## Reward
 
 ```
-R = success − w_p · pause − w_a · forgetting − w_c · cost − λ · InfoLoss
+R = success − w_p · pause − w_a · forgetting − w_c · cost − λ · InfoLoss + w_r · retention
 ```
 
 | Term | Measured by |
@@ -77,7 +77,8 @@ R = success − w_p · pause − w_a · forgetting − w_c · cost − λ · Inf
 | `pause` | Seconds the user waits while compaction blocks |
 | `forgetting` | Planted facts *newly* violated relative to the full-context run |
 | `cost` | Uncached, cached and output tokens, priced per model |
-| `InfoLoss` | How much worse the agent predicts its next turns from the compacted context than from the full one |
+| `InfoLoss` | How much worse the agent predicts its next turns from the compacted context than from the full one. Signed: the compacted context can be easier to continue from, and that is kept as a small bonus |
+| `retention` | Dense term: share of planted facts a probe still answers correctly right after compaction. Gives the controller an immediate signal instead of waiting for the episode outcome |
 
 Weights come from a profile (`default`, `cost_sensitive`, `safety_first`) so the same environment can train different tradeoffs.
 

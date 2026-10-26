@@ -113,7 +113,7 @@ async def score_row(cfg: Config, llm: LLM, task: Task, result: EpisodeResult, *,
     for t in TYPES:
         row[f"ret_{t}"] = float(np.mean(by_type[t])) if by_type.get(t) else None
     row["conf_ece"] = reliability(cal_c, cal_r)["ece"] if cal_c else None
-    r = reward(row["success"], row["pause_s"], row["forgetting_score"], row["cost"], 0.0, prof)
+    r = reward(row["success"], row["pause_s"], row["forgetting_score"], row["cost"], 0.0, prof, retention=row["retention"])
     row.update(r)
     return row
 

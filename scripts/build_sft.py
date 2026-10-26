@@ -56,7 +56,7 @@ def main() -> None:
 
     out, chosen, gain = [], Counter(), []
     for (ep, step), rows in sorted(by_bp.items()):
-        win = min(rows, key=lambda r: args.lam * r["infoloss"] - r["retention"])
+        win = min(rows, key=lambda r: args.lam * r["infoloss_raw"] - r["retention"])
         res = CompactionResult.model_validate_json(cand_path(P, win).read_text())
         snap = store.load(ep, step)
         st = state_from_snapshot(snap, cfg, BUDGET, count_tokens(snap.messages, tools, cfg.prompt_overhead_tokens))

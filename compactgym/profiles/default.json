@@ -16,5 +16,6 @@
     "Reference",
     "Error"
   ],
-  "keep_k": 2
+  "keep_k": 2,
+  "w_r": 0.3
 }
