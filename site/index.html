@@ -1,0 +1,453 @@
+<title>CompactGym</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout concept: a lab notebook for one experiment. A sticky contents rail beside a single reading column; figures sit inside the column at full width. */
+:root {
+  --bg: #f4f7f9;
+  --surface: #ffffff;
+  --ink: #14202b;
+  --muted: #566574;
+  --rule: #d6dee5;
+  --link: #1f62b5;
+  --accent: #2a78d6;   /* cliff */
+  --accent2: #eb6834;  /* frontier */
+  --grey: #9aa7b4;
+  --code: #e9eef3;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161b; --surface: #171d23; --ink: #e8edf2; --muted: #9fb0bf; --rule: #2a343d; --link: #6aa8f0;
+    --accent: #3987e5; --accent2: #d95926; --grey: #6b7a88; --code: #1d252d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161b; --surface: #171d23; --ink: #e8edf2; --muted: #9fb0bf; --rule: #2a343d; --link: #6aa8f0;
+  --accent: #3987e5; --accent2: #d95926; --grey: #6b7a88; --code: #1d252d; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1.125rem; line-height: 1.62; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0; }
+a { color: var(--link); text-underline-offset: 0.18em; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.page { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 190px minmax(0, 1fr); column-gap: 3.5rem; padding-block: 2.5rem 5rem; }
+.rail { position: sticky; top: 1.5rem; align-self: start; font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.02em; }
+.rail b { display: block; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0; margin-bottom: 0.9rem; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.rail a { color: var(--muted); text-decoration: none; }
+.rail a:hover { color: var(--ink); text-decoration: underline; }
+main { min-width: 0; }
+main > section { padding-top: 2.6rem; }
+.prose { max-width: 41rem; }
+.prose > * + * { margin-top: 1rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.12; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.5rem, 6vw, 3.9rem); }
+h2 { font-size: clamp(1.6rem, 3.2vw, 2.1rem); margin-bottom: 1rem; }
+h3 { font-size: 1.2rem; margin-top: 1.6rem; }
+.lede { font-size: 1.3rem; line-height: 1.5; max-width: 38rem; }
+.kicker { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.status { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin-top: 1.4rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.status span::before { content: ""; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.45rem; background: var(--accent); border-radius: 50%; }
+.status span.warn::before { background: var(--accent2); }
+code, pre { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--code); padding: 0.08em 0.35em; border-radius: 3px; }
+pre { background: var(--code); padding: 1rem 1.1rem; border-radius: 6px; overflow-x: auto; line-height: 1.5; max-width: 100%; }
+pre code { background: none; padding: 0; }
+figure { margin: 1.8rem 0 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 1.1rem 1.2rem 0.9rem; min-width: 0; }
+figure svg { display: block; width: 100%; height: auto; }
+figcaption { font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; color: var(--muted); margin-top: 0.7rem; }
+.ftitle { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; margin-bottom: 0.5rem; }
+.fsub { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); margin-bottom: 0.4rem; }
+.panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem 1.6rem; }
+.key { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); margin-bottom: 0.9rem; }
+.key i { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-right: 0.4rem; vertical-align: -1px; }
+.tbl { overflow-x: auto; margin-top: 1.4rem; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; line-height: 1.4; }
+th, td { text-align: left; padding: 0.55rem 0.8rem 0.55rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 0.85rem; padding-right: 0.8rem; }
+td:first-child { font-family: var(--font-mono); font-size: 0.85rem; white-space: nowrap; }
+details { margin-top: 0.8rem; font-size: 0.9rem; }
+summary { cursor: pointer; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
+.fix { border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 1.1rem; }
+.fix h3 { margin-top: 0; font-size: 1.1rem; }
+.fix p { margin-top: 0.4rem; }
+ol.steps { padding-left: 1.3rem; display: grid; gap: 0.55rem; }
+ul.plain { padding-left: 1.2rem; display: grid; gap: 0.45rem; }
+.numview { font-size: 0.78rem; }
+.svgtxt { fill: var(--ink); font-family: var(--font-mono); font-size: 11px; }
+.svgmut { fill: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
+.grid-line { stroke: var(--rule); stroke-width: 1; }
+.axis-line { stroke: var(--grey); stroke-width: 1; }
+footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); padding-block: 1.5rem 3.5rem; }
+  .rail { position: static; margin-bottom: 0.5rem; }
+  .rail ol { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+  .rail b { margin-bottom: 0.5rem; }
+  .panels { grid-template-columns: minmax(0, 1fr); }
+  body { font-size: 1.05rem; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="page">
+  <nav class="rail" aria-label="Contents">
+    <b>CompactGym</b>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#problem">The problem</a></li>
+      <li><a href="#gym">How the gym works</a></li>
+      <li><a href="#arms">Methods compared</a></li>
+      <li><a href="#results">Results at 8K</a></li>
+      <li><a href="#reward">What decides the winner</a></li>
+      <li><a href="#proxy">A metric that misleads</a></li>
+      <li><a href="#corrections">What we got wrong</a></li>
+      <li><a href="#edit">Editing in place</a></li>
+      <li><a href="#next">What is next</a></li>
+      <li><a href="#reproduce">Reproduce</a></li>
+      <li><a href="#limits">Limits</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="overview" style="padding-top:0">
+      <p class="kicker">Research notes · Fireworks Deploy hackathon build</p>
+      <h1>Teaching a small model what to forget</h1>
+      <p class="lede">CompactGym is a practice environment for context compaction. An email and calendar assistant works through a long session, its history gets squeezed to fit a small window, and we check what it forgot.</p>
+      <div class="status">
+        <span>Environment, 10 baselines, tests: built</span>
+        <span>Live results: small samples</span>
+        <span class="warn">Trained model: not yet</span>
+      </div>
+      <div class="prose" style="margin-top:1.6rem">
+        <p>We set out to train a small open model that decides when and how to compact, and to beat a frontier model at it. This page records what we built, what the numbers say so far, and where our own claims turned out to be wrong.</p>
+        <p>The short version: a deterministic method that does no rewriting, called <code>cliff</code>, is very hard to beat on cost and speed. A frontier summarizer forgets less. A popular quality metric points the wrong way. Nobody has trained the small model yet.</p>
+      </div>
+    </section>
+
+    <section id="problem">
+      <h2>The problem</h2>
+      <div class="prose">
+        <p>An agent can only hold so much text. When the window fills, something has to be dropped, summarized or moved aside. If the wrong thing goes, the agent forgets an instruction such as "don't email Jonas" and does the wrong thing without any error.</p>
+        <p>Small windows make this constant. Apple's on-device model has a 4,096 token window shared between the prompt and the answer. Local models run through Ollama default to a few thousand tokens. A real session passes that quickly.</p>
+      </div>
+      <figure>
+        <div class="ftitle">One recorded session, run without compaction</div>
+        <div class="fsub">Episode p2000, hard mode. Context size at each agent step.</div>
+        <div id="growth" role="img" aria-label="Line chart: context grows from 0.7K tokens at step 0 to 30K tokens at step 80, far above 8K and 4K budget lines."></div>
+        <figcaption>The session reaches 30K tokens. An 8K budget forces about four times its size out of the window by the end. In live branches at 8K, compaction fires 8 to 24 times per session.</figcaption>
+      </figure>
+    </section>
+
+    <section id="gym">
+      <h2>How the gym works</h2>
+      <div class="prose">
+        <p>A simulated user works through 28 requests with a frozen assistant model. The assistant has email and calendar tools over a generated mailbox. Early in the session the user states facts that matter later: a person to leave out of the loop, a date that moved, a PO number, a rule about sign-offs. Before each model call, if the context is over budget, a compactor rewrites it.</p>
+      </div>
+      <figure>
+        <div class="ftitle">One episode</div>
+        <svg viewBox="0 0 640 150" role="img" aria-label="Loop: simulated user to frozen assistant to compactor, then a verifier that scores success and forgotten facts.">
+          <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--grey)"/></marker></defs>
+          <g class="svgtxt">
+            <rect x="8" y="18" width="130" height="54" rx="4" fill="var(--surface)" stroke="var(--grey)"/><text x="73" y="42" text-anchor="middle">Simulated user</text><text x="73" y="58" text-anchor="middle" class="svgmut">28 requests, facts</text>
+            <rect x="200" y="18" width="130" height="54" rx="4" fill="var(--surface)" stroke="var(--grey)"/><text x="265" y="42" text-anchor="middle">Frozen assistant</text><text x="265" y="58" text-anchor="middle" class="svgmut">email + calendar tools</text>
+            <rect x="392" y="18" width="130" height="54" rx="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/><text x="457" y="42" text-anchor="middle">Compactor</text><text x="457" y="58" text-anchor="middle" class="svgmut">the part we train</text>
+            <rect x="200" y="96" width="322" height="44" rx="4" fill="var(--surface)" stroke="var(--grey)"/><text x="361" y="116" text-anchor="middle">Verifier</text><text x="361" y="131" text-anchor="middle" class="svgmut">mailbox diff, forgotten facts, cost, pause</text>
+          </g>
+          <path d="M138 45 H198" stroke="var(--grey)" fill="none" marker-end="url(#arr)"/>
+          <path d="M330 45 H390" stroke="var(--grey)" fill="none" marker-end="url(#arr)"/>
+          <path d="M457 72 V84 H265 V72" stroke="var(--grey)" fill="none" marker-end="url(#arr)"/>
+          <path d="M222 72 V94" stroke="var(--grey)" fill="none" marker-end="url(#arr)"/>
+          <text x="540" y="40" class="svgmut">over budget?</text><text x="540" y="54" class="svgmut">compact, resume</text>
+        </svg>
+        <figcaption>Planted fact types: Action, Information, Process, Preference, Output, plus Revision, Decision, Reference and Error. Success comes from diffing the final mailbox against the goal, so no model judges it.</figcaption>
+      </figure>
+      <div class="prose" style="margin-top:1.4rem">
+        <h3>Hard mode</h3>
+        <p>At 16K almost nothing was forgotten, so there was nothing to measure. Hard mode plants facts in turns 1 to 3 and asks for them only in the last 40% of the session. A forgotten fact is gone for good, because the simulated user never repeats it. A goal scores zero when the fact behind it was violated. That raised newly forgotten facts from 0.2 to about 0.4 per branch.</p>
+        <h3>Branching</h3>
+        <p>Any step can be snapshotted and continued under different compactors with identical seeds. The difference between branches is the effect of the compaction itself, which gives a clean comparison and a ready baseline for reinforcement learning.</p>
+      </div>
+    </section>
+
+    <section id="arms">
+      <h2>Methods compared</h2>
+      <div class="prose"><p>Ten baselines, including the compaction prompts of Anthropic's API docs, Codex CLI and pi-mono. The ones that appear in the charts below:</p></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Method</th><th>What it does</th><th>Model call?</th></tr></thead>
+        <tbody>
+          <tr><td>cliff</td><td>Drops tool results over 500 characters, shortens old tool calls, keeps user text and the last 3 turns. No rewriting.</td><td>No</td></tr>
+          <tr><td>frontier</td><td>A large model writes the summary. The stand-in is an open model, glm-5p3, not a closed one.</td><td>Yes, large</td></tr>
+          <tr><td>pi-mono summary</td><td>The main model summarizes older turns with the pi-mono prompt.</td><td>Yes</td></tr>
+          <tr><td>small (untrained)</td><td>A small prompted model picks an action, writes a summary and pins facts.</td><td>Yes, small</td></tr>
+          <tr><td>best-of-8</td><td>Eight small-model samples; the one with the lowest InfoLoss wins.</td><td>Yes, 8 samples</td></tr>
+        </tbody></table></div>
+    </section>
+
+    <section id="results">
+      <h2>Results at 8K</h2>
+      <div class="prose"><p>Hard mode, 8K budget, live branches from the same snapshots. Twelve to fourteen branches per method, so treat the gaps as indications.</p></div>
+      <figure>
+        <div class="key"><span><i style="background:var(--accent)"></i>cliff</span><span><i style="background:var(--accent2)"></i>frontier</span><span><i style="background:var(--grey)"></i>others</span></div>
+        <div class="panels">
+          <div><div class="ftitle">Facts newly forgotten</div><div class="fsub">per branch, lower is better</div><div id="p-forget"></div></div>
+          <div><div class="ftitle">Task success</div><div class="fsub">goals met, higher is better (axis starts at 0.70)</div><div id="p-success"></div></div>
+          <div><div class="ftitle">Cost</div><div class="fsub">US$ per branch</div><div id="p-cost"></div></div>
+          <div><div class="ftitle">Pause</div><div class="fsub">seconds the user waits per branch</div><div id="p-pause"></div></div>
+        </div>
+        <figcaption>Costs use placeholder prices from our config, so compare ratios, not dollars. The frontier summarizer forgets the least and costs about twice as much. It also blocks the user for about two minutes per session, where cliff blocks for a tenth of a second.</figcaption>
+        <details><summary>Table view</summary>
+          <div class="tbl"><table id="tbl-results"></table></div>
+        </details>
+      </figure>
+    </section>
+
+    <section id="reward">
+      <h2>What decides the winner</h2>
+      <div class="prose">
+        <p>Our reward charges for waiting: 0.002 per second of pause. A summarizer that blocks for two minutes pays about 0.24, while the whole spread in task success between methods is about 0.08. We rescored the same 14 branch points four ways.</p>
+      </div>
+      <figure>
+        <div class="ftitle">cliff minus frontier, paired by branch point</div>
+        <div class="fsub">Positive favors cliff. Dot is the mean, bar is a 95% bootstrap interval.</div>
+        <div id="forest1" role="img" aria-label="Forest plot of cliff minus frontier under four scoring rules."></div>
+        <figcaption>With the pause term, cliff leads but the interval includes zero. Without it, the frontier summarizer wins clearly. On task success alone it wins by 0.08.</figcaption>
+      </figure>
+      <div class="prose" style="margin-top:1.2rem"><p>So the headline depends on a weight. If compaction runs in the background and nobody waits, the pause term vanishes and a good summarizer is ahead. That is the opening for a trained small model: frontier-level forgetting at a small model's price and speed.</p></div>
+    </section>
+
+    <section id="proxy">
+      <h2>A metric that misleads</h2>
+      <div class="prose">
+        <p>InfoLoss measures how much worse a model predicts the next few turns from the compacted context than from the full one. It looked like a natural training signal. We checked it against what actually happened in live branches.</p>
+      </div>
+      <figure>
+        <div class="ftitle">Correlation with facts forgotten later in the branch</div>
+        <div class="fsub">Spearman rho. Negative means a higher score went with fewer forgotten facts.</div>
+        <div id="forest2" role="img" aria-label="Forest plot of correlations for InfoLoss and retention across three datasets."></div>
+        <figcaption>A useful training signal should show InfoLoss rising with forgetting, so positive. In two of three datasets it is significantly negative, and fact retention shows nothing. One reason is that we score the first compaction, while the outcome comes from roughly seventeen that follow. We set its weight to zero in the default reward.</figcaption>
+      </figure>
+    </section>
+
+    <section id="corrections">
+      <h2>What we got wrong</h2>
+      <div class="prose"><p>Several early conclusions did not survive checking. We list them because the corrected picture is more useful than the first one.</p></div>
+      <div class="prose">
+        <div class="fix"><h3>The buried-fact test did not test what we meant</h3>
+          <p>We expected facts that live only in a long email body to hurt cliff, since it drops long tool results. They did not: cliff and the frontier summarizer both forgot 0.17 such facts per branch. We first explained this with agents re-reading the email. That was wrong, because we had counted first reads. Re-reads were 0 of 11 for cliff. A likelier cause is our own prompt, which asked the agent for the gist of the email, so the agent restated the fact in its own reply, and cliff keeps assistant text. The test needs redesigning.</p></div>
+        <div class="fix"><h3>Success differences are real when paired</h3>
+          <p>We said success differences between methods were not significant. Paired by branch point, the frontier summarizer beats cliff by 0.08, interval 0.04 to 0.13.</p></div>
+        <div class="fix"><h3>A flaw in our first reward check</h3>
+          <p>We resumed each episode from its earliest eligible point, but some episodes plant their facts late. Those branches had two or three turns left to forget anything, which made forgetting look rarer than it is.</p></div>
+        <div class="fix"><h3>The pilot's best-of-8 number is not reproduced</h3>
+          <p>An earlier pilot reported 41% lower InfoLoss for best-of-8 against one small-model attempt. A later run on 10 new seeds gave 25%. We have not re-verified the pilot figure.</p></div>
+      </div>
+    </section>
+
+    <section id="edit">
+      <h2>Editing in place</h2>
+      <div class="prose">
+        <p>A note on Shelley, the agent from exe.dev, inspired the newest method. A harness nudge asks the model to edit its own history with a tool: trim particular tool outputs, or squish a range of messages into a short note with a pointer to the original. An append-only log keeps everything.</p>
+        <p>We rebuilt that as <code>edit_context</code>. The model sees the context numbered and replies with edits by index. Every removed original goes into memory, so the assistant can recall it. Bad edits are rejected: protected messages, ranges that cut a tool call off from its result, notes longer than what they replace.</p>
+      </div>
+<pre><code>#2 [assistant] ~38 tokens            ← a tool call
+#3 [tool result search_emails] ~1100 tokens
+#4 [assistant] ~12 tokens
+#12 [assistant] ~9 tokens [protected]
+
+{"ops": [{"op": "trim", "ids": [3]},
+         {"op": "squish", "start": 5, "end": 8, "note": "Archived 12 promos (c2)"}],
+ "pinned": ["Don't email Jonas."], "confidence": 0.8}</code></pre>
+      <div class="tbl"><table>
+        <thead><tr><th>Editor</th><th class="n">Compactions</th><th class="n">Forced to fallback</th><th class="n">Pause per branch</th></tr></thead>
+        <tbody>
+          <tr><td>frontier</td><td class="n">9 and 8</td><td class="n">0</td><td class="n">90 s, 105 s</td></tr>
+          <tr><td>small, untrained</td><td class="n">8 and 13</td><td class="n">7 and 8</td><td class="n">566 s, 502 s</td></tr>
+        </tbody></table></div>
+      <div class="prose" style="margin-top:1rem"><p>Four branches only. The frontier model edits cleanly and keeps about half the context. The untrained small model fails the protocol in most compactions, and its reasoning makes it slow. That sets the training target.</p></div>
+    </section>
+
+    <section id="next">
+      <h2>What is next</h2>
+      <div class="prose">
+        <ol class="steps">
+          <li>Generate training data for the edit format: frontier edits as targets, plus the planted facts as exact labels for what to pin.</li>
+          <li>Fine-tune a small non-reasoning model on it. The current small model thinks too long to win on latency.</li>
+          <li>Compare it with the frontier editor on live hard-mode branches, with at least 14 branch points per method and matched cost.</li>
+          <li>Redesign the buried-fact test so the fact cannot be restated or found by a simple search.</li>
+          <li>Try the same question on LoCoMo and LongMemEval at a 4K budget, where cliff has no tool results to drop.</li>
+        </ol>
+        <p>What would change our mind: if the tuned small model cannot match the frontier editor on forgotten facts, the opening described above does not exist, and cliff stays the answer.</p>
+      </div>
+    </section>
+
+    <section id="reproduce">
+      <h2>Reproduce</h2>
+<pre><code>export FIREWORKS_API_KEY=...
+uv sync --extra dev &amp;&amp; uv run pytest                       # 76 offline tests
+COMPACTGYM_SPEC=hard COMPACTGYM_BUDGET=8000 \
+  uv run python -m compactgym.runner.pilot record --out outputs/hard --n 2012 --start 2000
+  # then: score --resume-only --core-only, then: resume --arms cliff frontier edit_context
+uv run python scripts/validate_reward.py outputs/hard/      # reward vs live outcomes</code></pre>
+      <div class="tbl"><table>
+        <thead><tr><th>Step</th><th class="n">Tracked cost</th></tr></thead>
+        <tbody>
+          <tr><td>Record one full-context episode</td><td class="n">about $0.07</td></tr>
+          <tr><td>Score one branch point (8 samples + baselines)</td><td class="n">about $0.04</td></tr>
+          <tr><td>One live 8K branch</td><td class="n">$0.03 to $0.07</td></tr>
+        </tbody></table></div>
+      <div class="prose" style="margin-top:0.8rem"><p>Code and design notes: <a href="https://github.com/ankittandon/CompactGym">github.com/ankittandon/CompactGym</a>.</p></div>
+    </section>
+
+    <section id="limits">
+      <h2>Limits</h2>
+      <div class="prose">
+        <ul class="plain">
+          <li>Samples are small: 12 to 14 branches per method in the charts above.</li>
+          <li>The frontier method is an open large model standing in for a closed one. We have not tested Claude or GPT.</li>
+          <li>Prices in the code are placeholders.</li>
+          <li>The 8K and 16K budgets are far smaller than the windows of current models. They stand in for on-device limits and for the pressure of long sessions.</li>
+          <li>The environment is simulated. Nothing here is a claim about a real mailbox.</li>
+          <li>No model has been trained. Every number above is a baseline or a diagnostic.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>CompactGym · research notes · numbers from our own runs, small samples</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function mount(id, svg) { var h = document.getElementById(id); if (h) { h.innerHTML = ""; h.appendChild(svg); } }
+  var COLORS = { cliff: "var(--accent)", frontier: "var(--accent2)" };
+  var ARMS = [
+    { key: "cliff", label: "cliff", n: 14, succ: 0.753, forget: 0.57, cost: 0.033, pause: 0.1 },
+    { key: "frontier", label: "frontier", n: 14, succ: 0.837, forget: 0.21, cost: 0.074, pause: 119.3 },
+    { key: "best8", label: "best-of-8", n: 12, succ: 0.786, forget: 0.42, cost: 0.038, pause: 179.5 },
+    { key: "small", label: "small (untrained)", n: 13, succ: 0.758, forget: 0.46, cost: 0.034, pause: 155.9 },
+    { key: "pi", label: "pi-mono summary", n: 14, succ: 0.762, forget: 0.64, cost: 0.038, pause: 37.3 }
+  ];
+  function colorOf(k) { return COLORS[k] || "var(--grey)"; }
+
+  /* horizontal bars from a zero baseline */
+  function bars(id, field, max, fmt) {
+    var W = 340, padL = 140, padR = 46, rowH = 28, H = ARMS.length * rowH + 12;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": field + " by method" });
+    svg.appendChild(el("line", { x1: padL, x2: padL, y1: 4, y2: H - 8, "class": "axis-line" }));
+    ARMS.forEach(function (a, i) {
+      var y = 8 + i * rowH, w = Math.max(1.5, (W - padL - padR) * a[field] / max);
+      svg.appendChild(el("text", { x: padL - 8, y: y + 11, "text-anchor": "end", "class": "svgtxt" }, a.label));
+      var r = el("rect", { x: padL, y: y, width: w, height: 15, rx: 2, fill: colorOf(a.key) });
+      r.appendChild(el("title", {}, a.label + ": " + fmt(a[field])));
+      svg.appendChild(r);
+      svg.appendChild(el("text", { x: padL + w + 6, y: y + 11.5, "class": "svgtxt" }, fmt(a[field])));
+    });
+    mount(id, svg);
+  }
+  /* dots on a labelled, non-zero axis */
+  function dots(id, field, lo, hi, ticks, fmt) {
+    var W = 340, padL = 140, padR = 46, rowH = 28, H = ARMS.length * rowH + 30;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": field + " by method" });
+    function x(v) { return padL + (W - padL - padR) * (v - lo) / (hi - lo); }
+    ticks.forEach(function (t) {
+      svg.appendChild(el("line", { x1: x(t), x2: x(t), y1: 2, y2: ARMS.length * rowH + 6, "class": "grid-line" }));
+      svg.appendChild(el("text", { x: x(t), y: ARMS.length * rowH + 20, "text-anchor": "middle", "class": "svgmut" }, t.toFixed(2)));
+    });
+    ARMS.forEach(function (a, i) {
+      var y = 8 + i * rowH;
+      svg.appendChild(el("text", { x: padL - 8, y: y + 11, "text-anchor": "end", "class": "svgtxt" }, a.label));
+      var c = el("circle", { cx: x(a[field]), cy: y + 7, r: 6, fill: colorOf(a.key), stroke: "var(--surface)", "stroke-width": 2 });
+      c.appendChild(el("title", {}, a.label + ": " + fmt(a[field])));
+      svg.appendChild(c);
+      svg.appendChild(el("text", { x: x(a[field]) + 10, y: y + 11.5, "class": "svgtxt" }, fmt(a[field])));
+    });
+    mount(id, svg);
+  }
+  bars("p-forget", "forget", 0.8, function (v) { return v.toFixed(2); });
+  dots("p-success", "succ", 0.70, 0.90, [0.70, 0.75, 0.80, 0.85, 0.90], function (v) { return v.toFixed(2); });
+  bars("p-cost", "cost", 0.09, function (v) { return "$" + v.toFixed(3); });
+  bars("p-pause", "pause", 220, function (v) { return v < 1 ? v.toFixed(1) + " s" : Math.round(v) + " s"; });
+
+  var t = document.getElementById("tbl-results");
+  if (t) {
+    var h = "<thead><tr><th>Method</th><th class='n'>Branches</th><th class='n'>Success</th><th class='n'>Forgotten</th><th class='n'>Cost</th><th class='n'>Pause</th></tr></thead><tbody>";
+    ARMS.forEach(function (a) { h += "<tr><td>" + a.label + "</td><td class='n'>" + a.n + "</td><td class='n'>" + a.succ.toFixed(3) + "</td><td class='n'>" + a.forget.toFixed(2) + "</td><td class='n'>$" + a.cost.toFixed(3) + "</td><td class='n'>" + a.pause.toFixed(1) + " s</td></tr>"; });
+    t.innerHTML = h + "</tbody>";
+  }
+
+  /* context growth */
+  (function () {
+    var pts = [[0, 707], [10, 3362], [20, 8182], [30, 12712], [40, 15691], [50, 17515], [60, 23368], [70, 26226], [80, 30055]];
+    var W = 640, H = 250, L = 50, R = 70, T = 14, B = 34, xmax = 84, ymax = 32000;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H });
+    function x(v) { return L + (W - L - R) * v / xmax; }
+    function y(v) { return H - B - (H - T - B) * v / ymax; }
+    [0, 8000, 16000, 24000, 32000].forEach(function (v) {
+      svg.appendChild(el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), "class": "grid-line" }));
+      svg.appendChild(el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end", "class": "svgmut" }, v / 1000 + "K"));
+    });
+    [0, 20, 40, 60, 80].forEach(function (v) { svg.appendChild(el("text", { x: x(v), y: H - 14, "text-anchor": "middle", "class": "svgmut" }, String(v))); });
+    svg.appendChild(el("text", { x: (L + W - R) / 2, y: H - 1, "text-anchor": "middle", "class": "svgmut" }, "agent step"));
+    [[8000, "8K budget"], [4000, "4K window"]].forEach(function (b) {
+      svg.appendChild(el("line", { x1: L, x2: W - R, y1: y(b[0]), y2: y(b[0]), stroke: "var(--accent2)", "stroke-width": 1.5, "stroke-dasharray": "5 4" }));
+      svg.appendChild(el("text", { x: W - R + 6, y: y(b[0]) + 4, "class": "svgtxt" }, b[1]));
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1); }).join(" ");
+    svg.appendChild(el("path", { d: d + " L" + x(80).toFixed(1) + " " + y(0) + " L" + x(0) + " " + y(0) + " Z", fill: "var(--accent)", opacity: 0.12 }));
+    svg.appendChild(el("path", { d: d, fill: "none", stroke: "var(--accent)", "stroke-width": 2.2 }));
+    var last = pts[pts.length - 1];
+    svg.appendChild(el("circle", { cx: x(last[0]), cy: y(last[1]), r: 5, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: x(last[0]) - 8, y: y(last[1]) - 10, "text-anchor": "end", "class": "svgtxt" }, "30K at step 80"));
+    mount("growth", svg);
+  })();
+
+  /* forest plots */
+  function forest(id, rows, lo, hi, ticks) {
+    var W = 640, L = 250, R = 160, rowH = 30, top = 6, H = rows.length * rowH + 44;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H });
+    function x(v) { return L + (W - L - R) * (v - lo) / (hi - lo); }
+    var base = rows.length * rowH + top;
+    ticks.forEach(function (tk) {
+      svg.appendChild(el("line", { x1: x(tk), x2: x(tk), y1: top, y2: base, "class": tk === 0 ? "axis-line" : "grid-line", "stroke-width": tk === 0 ? 1.5 : 1 }));
+      svg.appendChild(el("text", { x: x(tk), y: base + 16, "text-anchor": "middle", "class": "svgmut" }, (tk > 0 ? "+" : "") + tk.toFixed(1)));
+    });
+    rows.forEach(function (r, i) {
+      var cy = top + i * rowH + rowH / 2, col = r.color || "var(--accent)";
+      svg.appendChild(el("text", { x: L - 10, y: cy + 4, "text-anchor": "end", "class": "svgtxt" }, r.label));
+      svg.appendChild(el("line", { x1: x(r.lo), x2: x(r.hi), y1: cy, y2: cy, stroke: col, "stroke-width": 2 }));
+      [r.lo, r.hi].forEach(function (e) { svg.appendChild(el("line", { x1: x(e), x2: x(e), y1: cy - 5, y2: cy + 5, stroke: col, "stroke-width": 2 })); });
+      var c = el("circle", { cx: x(r.v), cy: cy, r: 5.5, fill: col, stroke: "var(--surface)", "stroke-width": 2 });
+      c.appendChild(el("title", {}, r.label + ": " + r.txt));
+      svg.appendChild(c);
+      svg.appendChild(el("text", { x: W - 4, y: cy + 4, "text-anchor": "end", "class": "svgtxt" }, r.txt));
+    });
+    mount(id, svg);
+  }
+  function f(v) { return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2); }
+  function row(label, v, lo, hi, color) { return { label: label, v: v, lo: lo, hi: hi, color: color, txt: f(v) + " [" + f(lo) + ", " + f(hi) + "]" }; }
+  forest("forest1", [
+    row("Full reward, as scored", 0.066, -0.062, 0.192, "var(--grey)"),
+    row("Pause term removed", -0.172, -0.294, -0.046),
+    row("Quality only (success, forgetting)", -0.216, -0.337, -0.088),
+    row("Task success only", -0.084, -0.129, -0.044)
+  ], -0.4, 0.25, [-0.4, -0.2, 0, 0.2]);
+  forest("forest2", [
+    row("InfoLoss, 16K trial (n=50)", -0.03, -0.31, 0.28, "var(--grey)"),
+    row("InfoLoss, hard 8K (n=60)", -0.33, -0.54, -0.08),
+    row("InfoLoss, buried facts (n=60)", -0.26, -0.48, -0.01),
+    row("Retention, 16K trial (n=50)", -0.12, -0.42, 0.19, "var(--grey)"),
+    row("Retention, hard 8K (n=60)", 0.01, -0.24, 0.24, "var(--grey)"),
+    row("Retention, buried facts (n=60)", -0.08, -0.32, 0.18, "var(--grey)")
+  ], -0.7, 0.4, [-0.6, -0.4, -0.2, 0, 0.2, 0.4]);
+})();
+</script>
