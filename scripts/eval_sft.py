@@ -25,7 +25,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-ACTIONS = {"keep", "truncate_verbatim", "clear_tool_outputs", "summarize_older", "rewrite", "offload_to_memory", "defer_to_frontier"}
+ACTIONS = {"keep", "truncate_verbatim", "clear_tool_outputs", "summarize_older", "rewrite", "offload_to_memory", "defer_to_frontier", "edit_context"}
 NEEDS_SUMMARY = {"summarize_older", "rewrite"}
 STOP = {"the", "and", "for", "you", "your", "not", "any", "all", "with", "that", "this", "are", "but", "has", "have", "from", "his", "her", "its", "out", "per", "use", "can", "exact", "phrase"}
 MATCH = 0.7

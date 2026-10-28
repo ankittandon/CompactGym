@@ -31,6 +31,7 @@ class CompactionAction(str, Enum):
     REWRITE = "rewrite"
     OFFLOAD_TO_MEMORY = "offload_to_memory"  # reversible; agent can recall()
     DEFER_TO_FRONTIER = "defer_to_frontier"
+    EDIT_CONTEXT = "edit_context"  # in-place edits by message index (trim / squish / hide), originals saved to memory
 
 
 class CompactionResult(BaseModel):
