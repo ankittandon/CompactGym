@@ -126,6 +126,8 @@ class Episode:
         ep.steps = []  # new branch logs only its own steps
         ep.branched_from = (snap.episode_id, snap.turn)
         ep.base_steps = x.get("steps", [])
+        if cfg.pin_oracle:  # diagnostic: a branch resumed mid-session starts with every fact stated so far already pinned
+            ep._inject_oracle_pins({"fact_ids": [f.id for f in task.facts if f.inject_turn <= ep.user_turn]})
         return ep
 
     # --------------------------------------------------------- compaction hook

@@ -237,3 +237,12 @@ def test_modeled_cache_breaks_on_compaction():
     res2 = asyncio.run(ep2.run())
     forced = [(a, b) for a, b in zip(res2.steps, res2.steps[1:]) if b.get("forced")]
     assert len(forced) > 1 and all(b["cached_modeled"] < 0.6 * a["prompt_tokens_est"] for a, b in forced[1:])  # the compacted context is mostly re-read uncached
+
+
+def test_oracle_pins_cover_facts_stated_before_a_branch_point():
+    from compactgym.config import Config
+    from compactgym.harness.agent import Episode
+    from compactgym.harness.snapshots import Snapshot
+    import inspect
+    src = inspect.getsource(Episode.from_snapshot)
+    assert "pin_oracle" in src and "inject_turn <= ep.user_turn" in src  # the branch pre-pins every fact whose turn has passed

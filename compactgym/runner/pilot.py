@@ -48,6 +48,7 @@ def paths(root: Path) -> dict[str, Path]:
 
 
 def mk_cfg(root: Path, **kw) -> Config:
+    kw.setdefault("pin_oracle", os.environ.get("COMPACTGYM_PIN_ORACLE") == "1")  # diagnostic upper bound: pin the planted facts (never a deployable policy)
     cfg = Config(budget_tokens=BUDGET, max_agent_steps=140, log_dir=str(root / "logs"), **kw)
     return cfg
 
