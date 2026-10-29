@@ -7,7 +7,7 @@ from collections import Counter
 
 from pydantic import BaseModel, Field
 
-_tok = re.compile(r"[a-z0-9@.&'\-]+")
+_tok = re.compile(r"[a-z0-9@]+(?:[.&'\-][a-z0-9@]+)*")  # inner dots, hyphens and apostrophes stay (emails, ids, don't); trailing punctuation does not
 
 
 def _terms(text: str) -> list[str]:

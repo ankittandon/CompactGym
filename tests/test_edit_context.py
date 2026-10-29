@@ -99,3 +99,22 @@ def test_compactor_keeps_when_nothing_valid_and_below_threshold():
     res2 = asyncio.run(EditContext(Config(), FakeLLM(), threshold_frac=0.99)(ms, state_for(ms), 10**6))
     assert res2.action == CompactionAction.KEEP  # below the threshold: no call
     assert "#3 [tool result search_emails]" in render_view(ms, protected_indices(ms, 2))
+
+
+def test_fresh_retrieve_keeps_only_a_stub_and_stores_the_record_verbatim():
+    from compactgym.compactors.fresh_retrieve import FreshRetrieve, STUB
+    ms = convo()
+    st = state_for(ms)
+    res = asyncio.run(FreshRetrieve(Config(), None, threshold_frac=0.0)(ms, st, 2000))
+    assert res.action == CompactionAction.OFFLOAD_TO_MEMORY and res.summary == STUB
+    assert [m.content for m in res.messages][1:2] == [STUB.join(["[Summary of the earlier conversation, written by a context compactor]\n", ""])]
+    assert sum(map(est_tokens, res.messages)) < sum(map(est_tokens, ms)) // 2
+    assert "Don't email Jonas" in st.memory.recall("Jonas")  # exact text comes back, nothing paraphrased
+    assert valid_structure(res.messages)
+
+
+def test_memory_search_ignores_trailing_punctuation():
+    m = MemoryStore()
+    m.add("[user]: Don't email Jonas. Send the form to contracts-desk@orion.example, not billing.")
+    assert "Jonas" in m.recall("jonas") and "contracts-desk@orion.example" in m.recall("contracts-desk@orion.example")
+    assert "Jonas" in m.recall("Don't email")
