@@ -83,12 +83,28 @@ nav .btn { padding: 0.4rem 0.8rem; font-size: 0.84rem; }
 @media (prefers-reduced-motion: no-preference) { .told em { animation: blink 2.4s ease-in-out infinite; } .told li:nth-child(2) em { animation-delay: .6s; } .told li:nth-child(3) em { animation-delay: 1.2s; } }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-/* stat strip */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 3.5rem; }
-.stat { border-top: 2px solid var(--ink); padding-top: 0.9rem; }
-.stat b { display: block; font-size: clamp(2.3rem, 5vw, 3.4rem); letter-spacing: -0.04em; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
-.stat p { margin-top: 0.6rem; font-size: 0.93rem; color: var(--muted); }
-.stat p strong { color: var(--ink); font-weight: 600; }
+/* three ways at a glance */
+.hero .defn { margin-top: 1.1rem; max-width: 34rem; font-size: 0.98rem; color: var(--muted); }
+.hero .defn b { color: var(--ink); font-weight: 600; }
+.glance-head { margin-top: 4rem; }
+.glance-head h2 { margin: 0; }
+.glance-head p { margin-top: 0.5rem; color: var(--muted); max-width: 40rem; }
+.glance { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.4rem; }
+.g { border: 1px solid var(--rule); border-radius: 12px; padding: 1.1rem 1.2rem 1.2rem; background: var(--bg); min-width: 0; border-top: 4px solid var(--grey); }
+.g.fr { border-top-color: var(--orange); }
+.g.pn { border-top-color: var(--blue); }
+.g h3 { font-size: 1.08rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.g .how { margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); min-height: 2.7em; }
+.g dl { margin: 1rem 0 0; display: grid; gap: 0.75rem; }
+.g dl > div { display: grid; grid-template-columns: 1fr auto; column-gap: 0.8rem; row-gap: 0.3rem; align-items: baseline; }
+.g dt { font-size: 0.82rem; color: var(--muted); }
+.g dd { margin: 0; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mini { grid-column: 1 / -1; height: 6px; background: var(--rule); border-radius: 99px; overflow: hidden; display: block; }
+.mini i { display: block; height: 100%; min-width: 3px; border-radius: 99px; background: var(--grey); }
+.g.fr .mini i { background: var(--orange); }
+.g.pn .mini i { background: var(--blue); }
+.g .verdict { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--rule); font-size: 0.92rem; }
+.badge { font: 500 0.66rem var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--blue); border: 1px solid var(--blue); border-radius: 99px; padding: 0.12rem 0.5rem; }
 .foot { margin-top: 1rem; font-size: 0.8rem; color: var(--muted); max-width: 60rem; }
 
 /* cards + numbered requirements */
@@ -185,7 +201,8 @@ footer { margin-top: 5rem; padding-block: 2rem 3.5rem; border-top: 1px solid var
 
 @media (max-width: 920px) {
   .hero { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: 2.5rem; }
-  .stats, .cards, .two { grid-template-columns: minmax(0, 1fr); }
+  .g .how { min-height: 0; }
+  .glance, .cards, .two { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wt-grid { grid-template-columns: minmax(0, 1fr); }
   .wt-col { border-right: 0; border-bottom: 1px solid var(--rule); }
@@ -211,15 +228,14 @@ footer { margin-top: 5rem; padding-block: 2rem 3.5rem; border-top: 1px solid var
 <div class="wrap" id="top">
   <header class="hero">
     <div>
-      <span class="mono">Open environment · context compaction for agents</span>
       <h1>CompactGym</h1>
-      <p class="sub">A gym for the moment an AI agent has to forget. It measures what a long-running agent loses when its history is squeezed to fit, and what that costs in money and waiting.</p>
+      <p class="sub">When a long conversation with an AI agent gets too big, the agent has to shrink its own history to keep going. CompactGym tests what gets lost when it does, and what the shrinking costs in money and waiting.</p>
+      <p class="defn"><b>A fact</b> is anything you told the agent that has to keep holding, like “don't email Jonas”. If shrinking drops it, nothing errors. The agent just does the wrong thing later.</p>
       <div class="actions">
-        <a class="btn" href="#walkthrough">Follow one instruction</a>
-        <a class="btn ghost" href="#results">See the results</a>
+        <a class="btn" href="#walkthrough">Walk through an example</a>
+        <a class="btn ghost" href="#results">See all results</a>
         <a class="btn ghost" href="https://github.com/ankittandon/CompactGym">Code</a>
       </div>
-      <p class="facts">A simulated email and calendar assistant · 10 baseline methods · a rule-based verifier, no LLM judge</p>
     </div>
     <aside class="wait" aria-label="An agent compacting its memory">
       <div class="wait-top"><b>Compacting our conversation so we can keep chatting…</b><span id="timer">4m 14s</span></div>
@@ -234,12 +250,43 @@ footer { margin-top: 5rem; padding-block: 2rem 3.5rem; border-top: 1px solid var
     </aside>
   </header>
 
-  <div class="stats">
-    <div class="stat"><b>~2 min</b><p><strong>Waiting per session</strong> when a frontier summarizer does the compaction at an 8K budget. Truncation and pinned facts block for under a second.</p></div>
-    <div class="stat"><b>2–4×</b><p><strong>Cheaper per session</strong> with truncation or retrieval plus pinned facts, at forgetting equal to or below the frontier summarizer. Pins here are an oracle, an upper bound.</p></div>
-    <div class="stat"><b>−0.33</b><p><strong>Correlation between a popular proxy metric and real forgetting.</strong> The sign is wrong (95% CI −0.54 to −0.08), so we dropped it from the reward.</p></div>
+  <div class="glance-head">
+    <h2>Three ways to shrink the history</h2>
+    <p>Same test sessions, same facts to remember. Every number is per session, and for all three, lower is better.</p>
   </div>
-  <p class="foot">Hard mode, 8K token budget, 12–14 live branches per method. The frontier method is glm-5p3, an open large model standing in for a closed one. Prices are placeholders from our config, so read ratios, not dollars. No model has been trained on this yet.</p>
+  <div class="glance">
+    <article class="g fr">
+      <h3>Ask a big model to summarize</h3>
+      <p class="how">A large model rewrites the old history as a short summary.</p>
+      <dl>
+        <div><dt>Wait</dt><dd>about 2 min</dd><span class="mini"><i style="width:100%"></i></span></div>
+        <div><dt>Cost</dt><dd>$0.074</dd><span class="mini"><i style="width:92%"></i></span></div>
+        <div><dt>Facts forgotten</dt><dd>0.25</dd><span class="mini"><i style="width:42%"></i></span></div>
+      </dl>
+      <p class="verdict">Most accurate of the real methods. Slowest and priciest.</p>
+    </article>
+    <article class="g cl">
+      <h3>Just cut the old output</h3>
+      <p class="how">Drop long tool results and keep what the user wrote. No rewriting.</p>
+      <dl>
+        <div><dt>Wait</dt><dd>under 1 s</dd><span class="mini"><i style="width:1%"></i></span></div>
+        <div><dt>Cost</dt><dd>$0.033</dd><span class="mini"><i style="width:41%"></i></span></div>
+        <div><dt>Facts forgotten</dt><dd>0.50</dd><span class="mini"><i style="width:83%"></i></span></div>
+      </dl>
+      <p class="verdict">Instant and cheap. Forgets twice as many facts.</p>
+    </article>
+    <article class="g pn">
+      <h3>Cut, and pin the facts <span class="badge">best case</span></h3>
+      <p class="how">Same cutting, plus a short pinned list of your facts that is always shown.</p>
+      <dl>
+        <div><dt>Wait</dt><dd>under 1 s</dd><span class="mini"><i style="width:1%"></i></span></div>
+        <div><dt>Cost</dt><dd>$0.034</dd><span class="mini"><i style="width:42%"></i></span></div>
+        <div><dt>Facts forgotten</dt><dd>0.17</dd><span class="mini"><i style="width:28%"></i></span></div>
+      </dl>
+      <p class="verdict">Fast, cheap, and forgets fewer facts than the summary, if the pinned list is right.</p>
+    </article>
+  </div>
+  <p class="foot">Measured on 12 to 14 test sessions per method, with a small token limit (8K) so the shrinking happens often. The “big model” is an open model standing in for a closed one, and prices are placeholders, so compare the ratios. In the third card the pinned list is the true set of facts, handed over perfectly. That is a best case. No trained model produces it yet.</p>
 
   <section id="problem">
     <span class="mono">Motivation</span>
